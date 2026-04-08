@@ -1,0 +1,45 @@
+services:
+  redis-source:
+    image: redis:7.4
+    container_name: redis-source
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  valkey-target:
+    image: valkey/valkey:8.1
+    container_name: valkey-target
+    ports:
+      - "6399:6379"
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  betterdb:
+    image: betterdb/monitor
+    container_name: betterdb
+    ports:
+      - "3001:3001"
+    environment:
+      - DB_HOST=redis-source
+      - DB_PORT=6379
+      - STORAGE_TYPE=memory
+    depends_on:
+      redis-source:
+        condition: service_healthy
+      valkey-target:
+        condition: service_healthy
+
+volumes:
+  redis-data:
+  valkey-data:
